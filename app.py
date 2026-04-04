@@ -47,17 +47,23 @@ hr { border-color:#162030 !important; }
 @st.cache_resource
 def init_ee():
     try:
-        ee.Initialize(project="maj-471914")
-        return True
-    except Exception:
-        try:
-            ee.Authenticate()
+        # Check if running on Streamlit Cloud (using Secrets)
+        if "GEE_JSON" in st.secrets:
+            import json
+            # Parse the secret string back into a dictionary
+            creds_dict = json.loads(st.secrets["GEE_JSON"])
+            credentials = ee.ServiceAccountCredentials(
+                creds_dict['client_email'], 
+                key_data=st.secrets["GEE_JSON"]
+            )
+            ee.Initialize(credentials, project="maj-471914")
+        else:
+            # Fallback for local testing (uses your personal login)
             ee.Initialize(project="maj-471914")
-            return True
-        except Exception:
-            return False
-
-ee_ok = init_ee()
+        return True
+    except Exception as e:
+        st.error(f"EE Initialization Error: {e}")
+        return False
 
 # ══════════════════════════════════════════════════════════
 # CONSTANTS
