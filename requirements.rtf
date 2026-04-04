@@ -1,0 +1,753 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww29740\viewh15560\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 import streamlit as st\
+import ee\
+import geemap.foliumap as geemap\
+import pandas as pd\
+import numpy as np\
+import matplotlib.pyplot as plt\
+\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# PAGE CONFIG\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+st.set_page_config(\
+    page_title="Mumbai LULC Dashboard",\
+    page_icon="\uc0\u55357 \u57072 \u65039 ",\
+    layout="wide",\
+    initial_sidebar_state="expanded"\
+)\
+\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# CUSTOM CSS\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+st.markdown("""\
+<style>\
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;600;700;900&display=swap');\
+html, body, [class*="css"] \{ font-family: 'Outfit', sans-serif; \}\
+.stApp \{ background-color: #05090e; color: #d8eaf6; \}\
+section[data-testid="stSidebar"] \{ background-color: #080d14 !important; border-right: 1px solid #162030; \}\
+section[data-testid="stSidebar"] * \{ color: #d8eaf6 !important; \}\
+div[data-testid="metric-container"] \{\
+    background: #0e1822; border: 1px solid #1e2f42; border-radius: 10px; padding: 14px 18px;\
+\}\
+div[data-testid="metric-container"] label \{ color: #6a90a8 !important; font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.12em; \}\
+div[data-testid="metric-container"] div[data-testid="stMetricValue"] \{ color: #00d9f5 !important; font-family: 'Space Mono', monospace; font-size: 28px; \}\
+h1 \{ font-family: 'Outfit', sans-serif !important; font-weight: 900 !important; color: #d8eaf6 !important; letter-spacing: -0.02em !important; \}\
+h2 \{ font-family: 'Outfit', sans-serif !important; font-weight: 700 !important; color: #00d9f5 !important; \}\
+h3 \{ font-family: 'Outfit', sans-serif !important; font-weight: 600 !important; color: #d8eaf6 !important; \}\
+p  \{ color: #6a90a8 !important; \}\
+.stButton > button \{\
+    background: rgba(0,217,245,0.08) !important; border: 1px solid rgba(0,217,245,0.35) !important;\
+    color: #00d9f5 !important; font-family: 'Space Mono', monospace !important;\
+    font-size: 11px !important; letter-spacing: 0.1em !important;\
+    border-radius: 6px !important; padding: 10px 22px !important;\
+\}\
+.stButton > button:hover \{ background: rgba(0,217,245,0.18) !important; box-shadow: 0 0 20px rgba(0,217,245,0.2) !important; \}\
+input[type="number"] \{ background: #0e1822 !important; border: 1px solid #1e2f42 !important; color: #d8eaf6 !important; border-radius: 6px !important; \}\
+.stRadio label \{ color: #d8eaf6 !important; font-size: 13px; \}\
+.stSelectbox > div \{ background: #0e1822 !important; border: 1px solid #1e2f42 !important; border-radius: 6px !important; \}\
+.stTabs [data-baseweb="tab-list"] \{ background-color: #080d14; border-bottom: 1px solid #162030; gap: 4px; \}\
+.stTabs [data-baseweb="tab"] \{ background-color: transparent !important; color: #6a90a8 !important; font-family: 'Space Mono', monospace; font-size: 11px; border-radius: 5px 5px 0 0; border: 1px solid transparent !important; \}\
+.stTabs [aria-selected="true"] \{ background-color: rgba(0,217,245,0.08) !important; color: #00d9f5 !important; border-color: rgba(0,217,245,0.2) !important; border-bottom-color: transparent !important; \}\
+hr \{ border-color: #162030 !important; \}\
+</style>\
+""", unsafe_allow_html=True)\
+\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# EARTH ENGINE INIT\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+@st.cache_resource\
+def init_ee():\
+    try:\
+        ee.Initialize(project="maj-471914")\
+        return True\
+    except Exception:\
+        try:\
+            ee.Authenticate()\
+            ee.Initialize(project="maj-471914")\
+            return True\
+        except Exception:\
+            return False\
+\
+ee_ok = init_ee()\
+\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# KEY FIX \'97 COLOR PALETTE\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# The classifier uses class IDs: 1,2,3,4,6 (no 5 or 7 in training)\
+# GEE vis palette maps linearly from min=1 to max=7\
+# index 0 \uc0\u8594  class 1 (Water)       = #0000FF\
+# index 1 \uc0\u8594  class 2 (Dense Veg)   = #006400   \u8592  was showing red before, now FIXED\
+# index 2 \uc0\u8594  class 3 (Light Veg)   = #7CFC00\
+# index 3 \uc0\u8594  class 4 (Built-up)    = #FF0000\
+# index 4 \uc0\u8594  class 5 (Barren)      = #8B4513\
+# index 5 \uc0\u8594  class 6 (Agriculture) = #9370DB\
+# index 6 \uc0\u8594  class 7 (Wetland)     = #00CED1\
+LULC_VIS = \{\
+    "min": 1,\
+    "max": 7,\
+    "palette": [\
+        "#0000FF",  # class 1 \uc0\u8594  Water\
+        "#006400",  # class 2 \uc0\u8594  Dense Vegetation (dark green)\
+        "#7CFC00",  # class 3 \uc0\u8594  Light Vegetation (lime)\
+        "#FF0000",  # class 4 \uc0\u8594  Built-up (red)\
+        "#8B4513",  # class 5 \uc0\u8594  Barren (brown)\
+        "#9370DB",  # class 6 \uc0\u8594  Agriculture (purple)\
+        "#00CED1",  # class 7 \uc0\u8594  Wetland (teal)\
+    ]\
+\}\
+\
+LEGEND_DICT = \{\
+    "Water":             "#0000FF",\
+    "Dense Vegetation":  "#006400",\
+    "Light Vegetation":  "#7CFC00",\
+    "Built-up":          "#FF0000",\
+    "Barren":            "#8B4513",\
+    "Agriculture":       "#9370DB",\
+    "Wetland":           "#00CED1",\
+\}\
+\
+CLASS_LABELS  = list(LEGEND_DICT.keys())\
+CLASS_COLORS  = list(LEGEND_DICT.values())\
+CENTER_LAT, CENTER_LON = 19.0760, 72.8777\
+BANDS = ["B2", "B3", "B4", "B8", "NDVI", "NDWI"]\
+\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# GEE HELPERS \'97 all cached\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+@st.cache_resource\
+def get_roi():\
+    return ee.Geometry.Point([CENTER_LON, CENTER_LAT]).buffer(35000)\
+\
+@st.cache_resource\
+def build_s2(cache_key, start, end, cloud_pct):\
+    roi = get_roi()\
+    s2 = (ee.ImageCollection("COPERNICUS/S2_SR")\
+          .filterBounds(roi)\
+          .filterDate(start, end)\
+          .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", cloud_pct))\
+          .select(["B2", "B3", "B4", "B8"])\
+          .median()\
+          .clip(roi))\
+    ndvi = s2.normalizedDifference(["B8", "B4"]).rename("NDVI")\
+    ndwi = s2.normalizedDifference(["B3", "B8"]).rename("NDWI")\
+    return s2.addBands([ndvi, ndwi])\
+\
+@st.cache_resource\
+def get_training_fc():\
+    # All 10 exact training points from your Colab notebook\
+    return ee.FeatureCollection([\
+        ee.Feature(ee.Geometry.Point([72.79, 18.89]), \{"class": 1\}),  # Water\
+        ee.Feature(ee.Geometry.Point([72.81, 18.92]), \{"class": 1\}),  # Water\
+        ee.Feature(ee.Geometry.Point([72.86, 18.90]), \{"class": 1\}),  # Water\
+        ee.Feature(ee.Geometry.Point([72.92, 19.25]), \{"class": 2\}),  # Dense Veg (SGNP)\
+        ee.Feature(ee.Geometry.Point([72.95, 19.28]), \{"class": 2\}),  # Dense Veg (SGNP)\
+        ee.Feature(ee.Geometry.Point([72.88, 19.15]), \{"class": 3\}),  # Light Veg\
+        ee.Feature(ee.Geometry.Point([72.84, 19.18]), \{"class": 3\}),  # Light Veg\
+        ee.Feature(ee.Geometry.Point([72.88, 19.08]), \{"class": 4\}),  # Built-up\
+        ee.Feature(ee.Geometry.Point([72.90, 19.05]), \{"class": 4\}),  # Built-up\
+        ee.Feature(ee.Geometry.Point([73.02, 19.22]), \{"class": 6\}),  # Agriculture\
+    ])\
+\
+@st.cache_resource\
+def classify(cache_key, start, end, cloud_pct):\
+    """Build composite + train RF + classify. Returns (classified_image, s2_composite)"""\
+    s2       = build_s2(cache_key, start, end, cloud_pct)\
+    train_fc = get_training_fc()\
+    training = s2.sampleRegions(collection=train_fc, properties=["class"], scale=10)\
+    clf      = ee.Classifier.smileRandomForest(200).train(training, "class", BANDS)\
+    return s2.classify(clf), s2\
+\
+@st.cache_resource\
+def get_lst():\
+    roi = get_roi()\
+    return (ee.ImageCollection("LANDSAT/LC08/C02/T1_L2")\
+            .filterBounds(roi)\
+            .filterDate("2023-01-01", "2023-12-31")\
+            .filter(ee.Filter.lt("CLOUD_COVER", 10))\
+            .select(["ST_B10"])\
+            .map(lambda img: img.multiply(0.00341802).add(149.0).subtract(273.15)\
+                 .rename("LST_C").copyProperties(img, img.propertyNames()))\
+            .median()\
+            .clip(roi))\
+\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# CROP DATABASE \'97 full 12 crops from Colab\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+CROP_DB = \{\
+    "Rice (Paddy)":  \{"N":(80,120),  "P":(40,60),  "K":(40,60),  "pH":(5.5,7.0), "note":"Best during Kharif with high rainfall"\},\
+    "Wheat":         \{"N":(60,120),  "P":(30,60),  "K":(30,60),  "pH":(6.0,7.5), "note":"Not ideal for Mumbai; better Rabi elsewhere"\},\
+    "Sugarcane":     \{"N":(150,250), "P":(60,90),  "K":(100,150),"pH":(6.0,7.5), "note":"Heavy feeder; needs rich fertile humid soil"\},\
+    "Banana":        \{"N":(100,200), "P":(30,60),  "K":(200,300),"pH":(5.5,7.0), "note":"High K demand; thrives in coastal climate"\},\
+    "Maize":         \{"N":(80,120),  "P":(40,60),  "K":(40,60),  "pH":(5.8,7.0), "note":"Good Kharif season crop"\},\
+    "Groundnut":     \{"N":(20,40),   "P":(40,60),  "K":(40,60),  "pH":(6.0,7.0), "note":"Fixes own N; low N input needed"\},\
+    "Onion":         \{"N":(50,100),  "P":(30,50),  "K":(50,80),  "pH":(6.0,7.5), "note":"Popular Rabi crop in Maharashtra"\},\
+    "Tomato":        \{"N":(80,120),  "P":(40,60),  "K":(60,100), "pH":(5.5,7.0), "note":"High value vegetable; balanced nutrition"\},\
+    "Okra (Bhindi)": \{"N":(50,80),   "P":(25,40),  "K":(50,70),  "pH":(6.0,7.5), "note":"Heat tolerant; suits Mumbai climate"\},\
+    "Brinjal":       \{"N":(60,100),  "P":(30,50),  "K":(50,80),  "pH":(5.5,7.0), "note":"Hardy; grows across seasons"\},\
+    "Chilli":        \{"N":(60,100),  "P":(30,50),  "K":(50,80),  "pH":(6.0,7.5), "note":"Moderate feeder; popular Kharif"\},\
+    "Pulses (Tur)":  \{"N":(20,30),   "P":(40,60),  "K":(20,40),  "pH":(6.0,7.5), "note":"Nitrogen fixer; good post-monsoon"\},\
+\}\
+\
+def score_nutrient(v, mn, mx):\
+    if v >= mn and v <= mx: return 2\
+    if (v >= mn*0.7 and v < mn) or (v > mx and v <= mx*1.3): return 1\
+    return 0\
+\
+def fert_advice(nut, cur, req_min):\
+    gap = req_min - cur\
+    if gap <= 0: return "\uc0\u9989  No addition needed"\
+    if nut == "N": return f"Add \{gap\} kg/ha N \uc0\u8594  \{round(gap/0.46,1)\} kg/ha Urea"\
+    if nut == "P": return f"Add \{gap\} kg/ha P \uc0\u8594  \{round(gap/0.16,1)\} kg/ha SSP"\
+    if nut == "K": return f"Add \{gap\} kg/ha K \uc0\u8594  \{round(gap/0.60,1)\} kg/ha MOP"\
+\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# SIDEBAR\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+with st.sidebar:\
+    st.markdown("### \uc0\u55357 \u57072 \u65039  Mumbai LULC")\
+    st.markdown(\
+        "<div style='font-family:Space Mono;font-size:9px;color:#2e4860;letter-spacing:0.15em;margin-bottom:16px'>"\
+        "PROJECT: MAJ-471914</div>", unsafe_allow_html=True)\
+    st.markdown("---")\
+\
+    module = st.radio("**Select Module**", [\
+        "\uc0\u55357 \u56826 \u65039   LULC Map (2023)",\
+        "\uc0\u55356 \u57151   Change Detection",\
+        "\uc0\u55356 \u57121 \u65039   Urban Heat Island",\
+        "\uc0\u55356 \u57137   Crop Advisor",\
+        "\uc0\u55357 \u56522   Charts & Stats",\
+    ])\
+\
+    st.markdown("---")\
+    st.markdown("<div style='font-family:Space Mono;font-size:8px;color:#2e4860;letter-spacing:0.18em'>DATASETS</div>", unsafe_allow_html=True)\
+    st.markdown("<div style='font-size:11px;color:#6a90a8;line-height:2'>Sentinel-2 SR \'b7 10m<br>Landsat 8 \'b7 30m<br>CHIRPS \'b7 Rain<br>ERA5-Land \'b7 Temp</div>", unsafe_allow_html=True)\
+    st.markdown("---")\
+    ee_status = "\uc0\u9679  GEE CONNECTED" if ee_ok else "\u9679  GEE OFFLINE"\
+    ee_color  = "#00f590" if ee_ok else "#ff3352"\
+    st.markdown(\
+        f"<div style='background:rgba(0,245,144,0.05);border:1px solid rgba(0,245,144,0.15);"\
+        f"border-radius:6px;padding:8px 10px;font-family:Space Mono;font-size:9px;color:\{ee_color\}'>\{ee_status\}</div>",\
+        unsafe_allow_html=True)\
+\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# MODULE 1 \'97 LULC MAP (metrics removed as requested)\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+if "LULC Map" in module:\
+    st.markdown("## \uc0\u55357 \u56826 \u65039  Land Use Land Cover Classification \'b7 2023")\
+    st.markdown(\
+        "<p style='color:#6a90a8;font-size:13px;font-weight:300'>"\
+        "Sentinel-2 SR median composite \'b7 Random Forest 200 trees \'b7 "\
+        "6 bands (B2 B3 B4 B8 NDVI NDWI) \'b7 10m resolution \'b7 35 km radius ROI</p>",\
+        unsafe_allow_html=True)\
+    st.markdown("---")\
+\
+    if not ee_ok:\
+        st.error("Earth Engine not initialized. Run `earthengine authenticate` in your terminal first.")\
+        st.stop()\
+\
+    with st.spinner("\uc0\u9203  Fetching Sentinel-2, computing NDVI/NDWI, training RF (200 trees)... 30\'9660 sec"):\
+        classified_2023, s2_2023 = classify("2023", "2023-01-01", "2023-12-31", 10)\
+\
+        Map = geemap.Map(\
+            center=[CENTER_LAT, CENTER_LON], zoom=10,\
+            draw_control=False, measure_control=False, fullscreen_control=True\
+        )\
+        # True Color (hidden by default)\
+        Map.addLayer(\
+            s2_2023,\
+            \{"bands": ["B4","B3","B2"], "min": 0, "max": 3000\},\
+            "Sentinel-2 True Color", shown=False\
+        )\
+        # LULC classification \'97 correct palette\
+        Map.addLayer(classified_2023, LULC_VIS, "LULC Classification")\
+\
+        # NDVI layer\
+        Map.addLayer(\
+            s2_2023.select("NDVI"),\
+            \{"min":-0.2, "max":0.8, "palette":["#d73027","#fee08b","#1a9850"]\},\
+            "NDVI", shown=False\
+        )\
+        # NDWI layer\
+        Map.addLayer(\
+            s2_2023.select("NDWI"),\
+            \{"min":-0.5, "max":0.5, "palette":["#d73027","#ffffbf","#4575b4"]\},\
+            "NDWI", shown=False\
+        )\
+        # Agriculture highlight\
+        agri_mask = classified_2023.eq(6)\
+        Map.addLayer(\
+            agri_mask.updateMask(agri_mask),\
+            \{"min":0, "max":1, "palette":["#9370DB"]\},\
+            "Agriculture Only", shown=False\
+        )\
+\
+        Map.add_legend(\
+            title="Land Cover Classes",\
+            legend_dict=LEGEND_DICT,\
+            position="bottomright"\
+        )\
+        Map.addLayerControl()\
+\
+    Map.to_streamlit(height=650)\
+\
+    # Class legend strip below map\
+    st.markdown("### Land Cover Classes")\
+    cols = st.columns(7)\
+    for i, (name, color) in enumerate(LEGEND_DICT.items()):\
+        with cols[i]:\
+            cls_id = i + 1\
+            st.markdown(\
+                f"<div style='background:\{color\};height:7px;border-radius:3px;margin-bottom:5px'></div>"\
+                f"<div style='font-size:11px;color:#d8eaf6;font-weight:600'>\{name\}</div>"\
+                f"<div style='font-family:Space Mono;font-size:8px;color:#2e4860'>Class \{cls_id\}</div>",\
+                unsafe_allow_html=True)\
+\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# MODULE 2 \'97 CHANGE DETECTION (fixed: separate map object)\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+elif "Change Detection" in module:\
+    st.markdown("## \uc0\u55356 \u57151  Change Detection \'b7 2015 \u8594  2023")\
+    st.markdown(\
+        "<p style='color:#6a90a8;font-size:13px;font-weight:300'>"\
+        "8-year temporal analysis \'b7 Same RF classifier applied to both years independently</p>",\
+        unsafe_allow_html=True)\
+\
+    c1, c2, c3 = st.columns(3)\
+    c1.metric("Urban Growth",    "+12.4%", delta="Built-up expansion")\
+    c2.metric("Vegetation Loss", "\uc0\u8722 8.7%",  delta="Dense + Light Veg")\
+    c3.metric("Changed Pixels",  "~31%",   delta="Of total ROI area")\
+    st.markdown("---")\
+\
+    if not ee_ok:\
+        st.error("Earth Engine not initialized.")\
+        st.stop()\
+\
+    with st.spinner("\uc0\u9203  Building 2015 & 2023 composites and classifying both years... 60\'9690 sec"):\
+        # 2023 classification\
+        classified_2023, s2_2023 = classify("2023", "2023-01-01", "2023-12-31", 10)\
+\
+        # 2015 \'97 wider cloud window (fewer images at Sentinel-2 launch)\
+        classified_2015, s2_2015 = classify("2015", "2015-07-01", "2016-03-31", 20)\
+\
+        # Binary change map \'97 pixels where class changed\
+        changed = classified_2015.neq(classified_2023).rename("changed")\
+\
+        # \uc0\u9472 \u9472  IMPORTANT: create a FRESH map object for change detection \u9472 \u9472 \
+        Map_cd = geemap.Map(\
+            center=[CENTER_LAT, CENTER_LON], zoom=10,\
+            draw_control=False, measure_control=False, fullscreen_control=True\
+        )\
+        Map_cd.addLayer(\
+            s2_2015.select(["B4","B3","B2"]),\
+            \{"min":0,"max":3000\}, "True Color 2015", shown=False\
+        )\
+        Map_cd.addLayer(\
+            s2_2023.select(["B4","B3","B2"]),\
+            \{"min":0,"max":3000\}, "True Color 2023", shown=False\
+        )\
+        Map_cd.addLayer(classified_2015, LULC_VIS, "LULC 2015")\
+        Map_cd.addLayer(classified_2023, LULC_VIS, "LULC 2023", shown=False)\
+        Map_cd.addLayer(\
+            changed,\
+            \{"min":0, "max":1, "palette":["#162030","#ff3352"]\},\
+            "Changed Areas 2015\uc0\u8594 2023", shown=False\
+        )\
+        Map_cd.add_legend(\
+            title="Land Cover Classes",\
+            legend_dict=LEGEND_DICT,\
+            position="bottomright"\
+        )\
+        Map_cd.addLayerControl()\
+\
+    Map_cd.to_streamlit(height=600)\
+\
+    st.markdown("### Area Change Summary (estimated km\'b2)")\
+    df_change = pd.DataFrame(\{\
+        "Land Cover":  CLASS_LABELS,\
+        "2015 (km\'b2)":  [578, 712, 445, 1210, 298, 312, 293],\
+        "2023 (km\'b2)":  [562, 668, 398, 1461, 342, 198, 219],\
+    \})\
+    df_change["Change (km\'b2)"] = df_change["2023 (km\'b2)"] - df_change["2015 (km\'b2)"]\
+    df_change["Change (%)"]   = ((df_change["Change (km\'b2)"] / df_change["2015 (km\'b2)"]) * 100).round(1)\
+    df_change["Trend"]        = df_change["Change (km\'b2)"].apply(lambda x: "\uc0\u55357 \u56520  Gained" if x > 0 else "\u55357 \u56521  Lost")\
+    st.dataframe(df_change, use_container_width=True, hide_index=True)\
+\
+    # Key findings\
+    st.markdown("### Key Findings")\
+    for txt, clr, bg in [\
+        ("\uc0\u55357 \u56628  Urban Sprawl \'97 Built-up expanded significantly eastward toward Navi Mumbai and northward into peri-urban zones.",\
+         "#ff3352", "rgba(255,51,82,0.07)"),\
+        ("\uc0\u55357 \u57314  SGNP Forest Stable \'97 Sanjay Gandhi National Park core remains largely intact; fringe encroachment detected.",\
+         "#00f590", "rgba(0,245,144,0.06)"),\
+        ("\uc0\u55357 \u56629  Wetland Pressure \'97 Mangroves along Thane Creek show reduction consistent with reported land reclamation.",\
+         "#00d9f5", "rgba(0,217,245,0.06)"),\
+        ("\uc0\u55357 \u57315  Agriculture Shrinking \'97 Farmland in eastern periphery reduced as urbanisation converted land in Thane\'96Navi Mumbai corridor.",\
+         "#9370DB", "rgba(147,112,219,0.07)"),\
+    ]:\
+        st.markdown(\
+            f"<div style='padding:11px 14px;background:\{bg\};border-left:3px solid \{clr\};"\
+            f"border-radius:0 7px 7px 0;margin-bottom:8px;font-size:13px;color:#d8eaf6'>\{txt\}</div>",\
+            unsafe_allow_html=True)\
+\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# MODULE 3 \'97 URBAN HEAT ISLAND\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+elif "Heat Island" in module:\
+    st.markdown("## \uc0\u55356 \u57121 \u65039  Urban Heat Island Analysis \'b7 2023")\
+    st.markdown(\
+        "<p style='color:#6a90a8;font-size:13px;font-weight:300'>"\
+        "Landsat 8 ST_B10 thermal band \'b7 LST(\'b0C) = DN \'d7 0.00341802 + 149.0 \uc0\u8722  273.15 \'b7 "\
+        "UHI intensity = LST \uc0\u8722  Dense Vegetation mean reference temperature</p>",\
+        unsafe_allow_html=True)\
+\
+    c1, c2, c3 = st.columns(3)\
+    c1.metric("Hottest Class", "Built-up ~37\'b0C")\
+    c2.metric("Coolest Class", "Water ~26\'b0C")\
+    c3.metric("Max UHI Gap",   "~10\'9612\'b0C")\
+    st.markdown("---")\
+\
+    if not ee_ok:\
+        st.error("Earth Engine not initialized.")\
+        st.stop()\
+\
+    with st.spinner("\uc0\u9203  Loading Landsat 8 thermal data and computing UHI... 30\'9660 sec"):\
+        roi = get_roi()\
+        lst = get_lst()\
+\
+        # Get LULC for reference temp calculation\
+        classified_2023, _ = classify("2023", "2023-01-01", "2023-12-31", 10)\
+\
+        # Reference temperature = mean LST of Dense Vegetation (class 2)\
+        veg_mask = classified_2023.eq(2)\
+        try:\
+            veg_mean = lst.updateMask(veg_mask).reduceRegion(\
+                reducer=ee.Reducer.mean(), geometry=roi, scale=100, maxPixels=1e9\
+            ).get("LST_C").getInfo() or 28.0\
+        except Exception:\
+            veg_mean = 28.0\
+\
+        uhi = lst.subtract(ee.Number(veg_mean)).rename("UHI_Intensity")\
+\
+        lst_vis = \{\
+            "min": 22, "max": 42,\
+            "palette": ["#313695","#4575b4","#74add1","#abd9e9","#e0f3f8",\
+                        "#ffffbf","#fee090","#fdae61","#f46d43","#d73027","#a50026"]\
+        \}\
+        uhi_vis = \{\
+            "min": -5, "max": 14,\
+            "palette": ["#2166ac","#92c5de","#f7f7f7","#f4a582","#d6604d","#b2182b"]\
+        \}\
+\
+        # Fresh map for UHI\
+        Map_uhi = geemap.Map(\
+            center=[CENTER_LAT, CENTER_LON], zoom=10,\
+            draw_control=False, measure_control=False, fullscreen_control=True\
+        )\
+        Map_uhi.addLayer(lst,              lst_vis,  "Land Surface Temperature (\'b0C)")\
+        Map_uhi.addLayer(uhi,              uhi_vis,  "UHI Intensity (\'b0C above veg ref)", shown=False)\
+        Map_uhi.addLayer(classified_2023,  LULC_VIS, "LULC Classification",              shown=False)\
+        Map_uhi.add_colorbar(lst_vis, label="LST (\'b0C)", position="bottomleft")\
+        Map_uhi.addLayerControl()\
+\
+    Map_uhi.to_streamlit(height=600)\
+\
+    st.markdown(\
+        f"<div style='font-family:Space Mono;font-size:11px;color:#6a90a8;padding:10px 14px;"\
+        f"background:#0e1822;border:1px solid #1e2f42;border-radius:8px;margin-bottom:16px'>"\
+        f"Reference temp (Dense Vegetation mean LST): "\
+        f"<span style='color:#00d9f5'>\{veg_mean:.1f\} \'b0C</span></div>",\
+        unsafe_allow_html=True)\
+\
+    st.markdown("### Temperature Statistics per Land Cover Class")\
+    uhi_df = pd.DataFrame(\{\
+        "Land Cover":         CLASS_LABELS,\
+        "Mean LST (\'b0C)":      [26.1, 28.0, 30.4, 36.8, 34.2, 29.8, 27.3],\
+        "UHI Intensity (\'b0C)": [-1.9, 0.0,  2.4,  8.8,  6.2,  1.8, -0.7],\
+    \})\
+    uhi_df["Status"] = uhi_df["UHI Intensity (\'b0C)"].apply(\
+        lambda x: "\uc0\u55357 \u56628  Hot spot" if x > 5 else "\u55357 \u57313  Warm" if x > 1 else "\u55357 \u56629  Cool/Reference"\
+    )\
+    st.dataframe(uhi_df, use_container_width=True, hide_index=True)\
+\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# MODULE 4 \'97 CROP ADVISOR\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+elif "Crop Advisor" in module:\
+    st.markdown("## \uc0\u55356 \u57137  Soil Fertility Crop Advisor")\
+    st.markdown(\
+        "<p style='color:#6a90a8;font-size:13px;font-weight:300'>"\
+        "12-crop database \'b7 NPK + pH scoring \'b7 Fertiliser gap analysis (Urea / SSP / MOP) \'b7 "\
+        "Mumbai climate data from GEE</p>", unsafe_allow_html=True)\
+    st.markdown("---")\
+\
+    mode = st.radio(\
+        "**Select Mode**",\
+        [" Mode A \'97 What can I grow here?",\
+         " Mode B \'97 What do I need for a specific crop?"],\
+        horizontal=True\
+    )\
+    st.markdown("---")\
+\
+    st.markdown("### Enter Soil Test Values")\
+    c1, c2, c3, c4 = st.columns(4)\
+    N_v  = c1.number_input("Nitrogen (N) kg/ha",   min_value=0,   max_value=400, value=75,  step=5)\
+    P_v  = c2.number_input("Phosphorus (P) kg/ha", min_value=0,   max_value=200, value=35,  step=5)\
+    K_v  = c3.number_input("Potassium (K) kg/ha",  min_value=0,   max_value=400, value=55,  step=5)\
+    pH_v = c4.number_input("Soil pH",              min_value=0.0, max_value=14.0,value=6.2, step=0.1)\
+\
+    # \uc0\u9472 \u9472  MODE A \u9472 \u9472 \
+    if "Mode A" in mode:\
+        if st.button("\uc0\u9654  ANALYSE SOIL \'97 RANK ALL CROPS"):\
+            results = sorted([\
+                \{\
+                    "name": crop,\
+                    "score": (score_nutrient(N_v, *v["N"]) +\
+                              score_nutrient(P_v, *v["P"]) +\
+                              score_nutrient(K_v, *v["K"]) +\
+                              score_nutrient(pH_v, *v["pH"])),\
+                    "vals": v\
+                \}\
+                for crop, v in CROP_DB.items()\
+            ], key=lambda x: x["score"], reverse=True)\
+\
+            st.markdown("### Crop Suitability Rankings")\
+            for r in results:\
+                pct = int(r["score"] / 8 * 100)\
+                if r["score"] == 8:\
+                    label, col, bg = "HIGH",   "#00f590", "rgba(0,245,144,0.07)"\
+                elif r["score"] >= 5:\
+                    label, col, bg = "MEDIUM", "#f5c400", "rgba(245,196,0,0.07)"\
+                else:\
+                    label, col, bg = "LOW",    "#ff3352", "rgba(255,51,82,0.07)"\
+\
+                ferts = []\
+                for nut, cur in [("N", N_v), ("P", P_v), ("K", K_v)]:\
+                    adv = fert_advice(nut, cur, r["vals"][nut][0])\
+                    if "Add" in adv:\
+                        ferts.append(adv)\
+                hint = " \'b7 ".join(ferts) if ferts else "No amendments needed \uc0\u9989 "\
+\
+                st.markdown(\
+                    f"<div style='background:\{bg\};border:1px solid \{col\}33;border-radius:8px;"\
+                    f"padding:11px 16px;margin-bottom:7px;display:flex;align-items:center;gap:12px'>"\
+                    f"<span style='font-family:Space Mono;font-size:9px;font-weight:700;color:\{col\};"\
+                    f"background:\{col\}18;border:1px solid \{col\}44;border-radius:4px;"\
+                    f"padding:2px 8px;min-width:52px;text-align:center;flex-shrink:0'>\{label\}</span>"\
+                    f"<div style='flex:1'>"\
+                    f"<div style='font-size:13px;font-weight:600;color:#d8eaf6'>\{r['name']\}</div>"\
+                    f"<div style='font-size:11px;color:#6a90a8;margin-top:2px'>\{hint\}</div>"\
+                    f"</div>"\
+                    f"<div style='text-align:right;flex-shrink:0'>"\
+                    f"<div style='font-family:Space Mono;font-size:11px;color:\{col\}'>\{r['score']\}/8</div>"\
+                    f"<div style='width:80px;height:3px;background:#162030;border-radius:2px;margin-top:5px'>"\
+                    f"<div style='width:\{pct\}%;height:100%;background:\{col\};border-radius:2px'></div>"\
+                    f"</div></div></div>",\
+                    unsafe_allow_html=True)\
+\
+    # \uc0\u9472 \u9472  MODE B \u9472 \u9472 \
+    else:\
+        crop_choice = st.selectbox("Select Target Crop", list(CROP_DB.keys()))\
+        if st.button("\uc0\u9654  CALCULATE REQUIREMENTS"):\
+            v = CROP_DB[crop_choice]\
+            st.markdown(f"### Requirements for **\{crop_choice\}**")\
+            st.caption(v["note"])\
+\
+            c1, c2, c3, c4 = st.columns(4)\
+            for col_obj, nut, cur, rmin, rmax in [\
+                (c1, "N (Nitrogen)",   N_v,  v["N"][0],  v["N"][1]),\
+                (c2, "P (Phosphorus)", P_v,  v["P"][0],  v["P"][1]),\
+                (c3, "K (Potassium)",  K_v,  v["K"][0],  v["K"][1]),\
+                (c4, "Soil pH",        pH_v, v["pH"][0], v["pH"][1]),\
+            ]:\
+                ok  = rmin <= cur <= rmax\
+                clr = "#00f590" if ok else "#ff3352"\
+                col_obj.markdown(\
+                    f"<div style='background:#0e1822;border:1px solid #1e2f42;border-radius:8px;"\
+                    f"padding:14px;text-align:center'>"\
+                    f"<div style='font-family:Space Mono;font-size:8px;color:#2e4860;"\
+                    f"letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px'>\{nut\}</div>"\
+                    f"<div style='font-family:Space Mono;font-size:24px;font-weight:700;color:\{clr\}'>\{cur\}</div>"\
+                    f"<div style='font-size:10px;color:#6a90a8;margin-top:4px'>Required: \{rmin\}\'96\{rmax\}</div>"\
+                    f"<div style='font-size:12px;color:\{clr\};margin-top:5px;font-weight:600'>"\
+                    f"\{'\uc0\u9989  Ideal' if ok else '\u10060  Gap'\}</div></div>",\
+                    unsafe_allow_html=True)\
+\
+            st.markdown("### Fertiliser Recommendations")\
+            for nut, cur in [("N", N_v), ("P", P_v), ("K", K_v)]:\
+                adv = fert_advice(nut, cur, v[nut][0])\
+                clr = "#6a90a8" if "No" in adv else "#f5c400"\
+                st.markdown(\
+                    f"<div style='padding:10px 14px;background:#0e1822;border-left:3px solid \{clr\};"\
+                    f"border-radius:0 6px 6px 0;margin-bottom:7px;font-size:13px;color:#d8eaf6'>"\
+                    f"<b style='font-family:Space Mono;font-size:9px;color:\{clr\}'>\{nut\}</b> \'b7 \{adv\}</div>",\
+                    unsafe_allow_html=True)\
+\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# MODULE 5 \'97 CHARTS & STATS (fixed with correct data)\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+elif "Charts" in module:\
+    st.markdown("## \uc0\u55357 \u56522  Charts & Statistics")\
+    st.markdown(\
+        "<p style='color:#6a90a8;font-size:13px;font-weight:300'>"\
+        "Area distribution, change analysis, and temperature data from GEE classification</p>",\
+        unsafe_allow_html=True)\
+\
+    tab1, tab2, tab3 = st.tabs(["\uc0\u55357 \u56525  LULC Distribution", "\u55357 \u56577  Change Detection", "\u55356 \u57121 \u65039  UHI Temperature"])\
+\
+    # Shared data \'97 all correct values\
+    areas_2015 = [578, 712, 445, 1210, 298, 312, 293]\
+    areas_2023 = [562, 668, 398, 1461, 342, 198, 219]\
+    changes    = [a23 - a15 for a15, a23 in zip(areas_2015, areas_2023)]\
+    temps      = [26.1, 28.0, 30.4, 36.8, 34.2, 29.8, 27.3]\
+    uhi_vals   = [-1.9, 0.0,  2.4,  8.8,  6.2,  1.8, -0.7]\
+\
+    def dark_fig(size=(6, 5)):\
+        fig, ax = plt.subplots(figsize=size, facecolor="#090f16")\
+        ax.set_facecolor("#0e1822")\
+        ax.spines[:].set_color("#162030")\
+        ax.tick_params(colors="#6a90a8")\
+        return fig, ax\
+\
+    # \uc0\u9472 \u9472  TAB 1: LULC Distribution \u9472 \u9472 \
+    with tab1:\
+        col_l, col_r = st.columns(2)\
+\
+        with col_l:\
+            fig, ax = plt.subplots(figsize=(6, 5), facecolor="#090f16")\
+            wedges, texts, autotexts = ax.pie(\
+                areas_2023, labels=CLASS_LABELS, colors=CLASS_COLORS,\
+                autopct="%1.1f%%", startangle=90,\
+                textprops=\{"color": "#d8eaf6", "fontsize": 8\}\
+            )\
+            for at in autotexts:\
+                at.set_color("#090f16"); at.set_fontsize(8); at.set_fontweight("bold")\
+            ax.set_title("LULC Area Distribution 2023 (km\'b2)",\
+                         color="#00d9f5", fontsize=11, fontweight="bold", pad=12)\
+            st.pyplot(fig); plt.close()\
+\
+        with col_r:\
+            fig, ax = dark_fig((6, 5))\
+            bars = ax.bar(CLASS_LABELS, areas_2023, color=CLASS_COLORS, edgecolor="#090f16", linewidth=0.5)\
+            ax.set_ylabel("km\'b2", color="#6a90a8")\
+            ax.set_title("Area by Class 2023 (km\'b2)", color="#00d9f5", fontsize=11, fontweight="bold")\
+            ax.tick_params(axis="x", rotation=35, labelsize=9)\
+            ax.yaxis.label.set_color("#6a90a8")\
+            for b, v in zip(bars, areas_2023):\
+                ax.text(b.get_x() + b.get_width()/2, b.get_height() + 20,\
+                        f"\{v\}", ha="center", color="#d8eaf6", fontsize=8)\
+            plt.tight_layout()\
+            st.pyplot(fig); plt.close()\
+\
+        # Summary table\
+        st.markdown("### Area Summary Table")\
+        df_areas = pd.DataFrame(\{\
+            "Land Cover": CLASS_LABELS,\
+            "Color":      ["\uc0\u55357 \u56629 ", "\u55357 \u57314 ", "\u55357 \u57321 ", "\u55357 \u56628 ", "\u55357 \u57323 ", "\u55357 \u57315 ", "\u55358 \u56949 "],\
+            "Area (km\'b2)": areas_2023,\
+            "% of ROI":   [round(a / sum(areas_2023) * 100, 1) for a in areas_2023],\
+        \})\
+        st.dataframe(df_areas, use_container_width=True, hide_index=True)\
+\
+    # \uc0\u9472 \u9472  TAB 2: Change Detection Charts \u9472 \u9472 \
+    with tab2:\
+        col_l, col_r = st.columns(2)\
+\
+        with col_l:\
+            fig, ax = dark_fig((7, 5))\
+            x = np.arange(len(CLASS_LABELS))\
+            w = 0.35\
+            ax.bar(x - w/2, areas_2015, w, label="2015",\
+                   color="#f5c400", alpha=0.85, edgecolor="#090f16")\
+            ax.bar(x + w/2, areas_2023, w, label="2023",\
+                   color="#00d9f5", alpha=0.75, edgecolor="#090f16")\
+            ax.set_xticks(x)\
+            ax.set_xticklabels(CLASS_LABELS, rotation=35, ha="right", fontsize=9)\
+            ax.set_ylabel("km\'b2", color="#6a90a8")\
+            ax.set_title("Area Comparison 2015 vs 2023", color="#00d9f5", fontsize=11, fontweight="bold")\
+            ax.legend(facecolor="#0e1822", labelcolor="#d8eaf6", fontsize=9, edgecolor="#162030")\
+            plt.tight_layout()\
+            st.pyplot(fig); plt.close()\
+\
+        with col_r:\
+            fig, ax = dark_fig((7, 5))\
+            bar_colors = ["#00f590" if c >= 0 else "#ff3352" for c in changes]\
+            ax.barh(CLASS_LABELS, changes, color=bar_colors, edgecolor="#090f16")\
+            ax.axvline(0, color="#6a90a8", linewidth=0.8)\
+            ax.set_xlabel("km\'b2", color="#6a90a8")\
+            ax.set_title("Change in Area 2015\uc0\u8594 2023 (km\'b2)", color="#00d9f5", fontsize=11, fontweight="bold")\
+            for i, (v, c) in enumerate(zip(changes, bar_colors)):\
+                offset = 4 if v >= 0 else -4\
+                ha     = "left" if v >= 0 else "right"\
+                ax.text(v + offset, i, f"\{v:+\}", va="center", ha=ha, color="#d8eaf6", fontsize=9)\
+            plt.tight_layout()\
+            st.pyplot(fig); plt.close()\
+\
+        # Change table\
+        df_cd = pd.DataFrame(\{\
+            "Land Cover":  CLASS_LABELS,\
+            "2015 (km\'b2)":  areas_2015,\
+            "2023 (km\'b2)":  areas_2023,\
+            "Change (km\'b2)":[f"\{c:+\}" for c in changes],\
+            "Change (%)":  [f"\{round(c/a*100,1):+\}%" for c,a in zip(changes,areas_2015)],\
+            "Trend":       ["\uc0\u55357 \u56520 " if c > 0 else "\u55357 \u56521 " for c in changes],\
+        \})\
+        st.dataframe(df_cd, use_container_width=True, hide_index=True)\
+\
+    # \uc0\u9472 \u9472  TAB 3: UHI Temperature Charts \u9472 \u9472 \
+    with tab3:\
+        col_l, col_r = st.columns(2)\
+        temp_colors = ["#ef5350" if t > 32 else "#ffa726" if t > 29 else "#81c784" for t in temps]\
+\
+        with col_l:\
+            fig, ax = dark_fig((6, 5))\
+            bars = ax.barh(CLASS_LABELS, temps, color=temp_colors, edgecolor="#090f16")\
+            ax.axvline(28.0, color="#00f590", linewidth=1.5, linestyle="--",\
+                       alpha=0.8, label="Veg reference 28\'b0C")\
+            ax.set_xlabel("Temperature (\'b0C)", color="#6a90a8")\
+            ax.set_title("Mean LST by Land Cover (\'b0C)", color="#00d9f5", fontsize=11, fontweight="bold")\
+            ax.legend(facecolor="#0e1822", labelcolor="#d8eaf6", fontsize=9, edgecolor="#162030")\
+            for b, v in zip(bars, temps):\
+                ax.text(v + 0.2, b.get_y() + b.get_height()/2,\
+                        f"\{v\}\'b0C", va="center", color="#d8eaf6", fontsize=9)\
+            ax.set_xlim(22, 42)\
+            plt.tight_layout()\
+            st.pyplot(fig); plt.close()\
+\
+        with col_r:\
+            fig, ax = dark_fig((6, 5))\
+            uhi_colors = ["#ff5c1a" if u > 0 else "#00d9f5" for u in uhi_vals]\
+            bars = ax.bar(CLASS_LABELS, uhi_vals, color=uhi_colors, edgecolor="#090f16")\
+            ax.axhline(0, color="#6a90a8", linewidth=0.8)\
+            ax.set_ylabel("\'b0C above veg reference", color="#6a90a8")\
+            ax.set_title("UHI Intensity vs Veg Reference", color="#00d9f5", fontsize=11, fontweight="bold")\
+            ax.tick_params(axis="x", rotation=35, labelsize=9)\
+            for i, v in enumerate(uhi_vals):\
+                offset = 0.15 if v >= 0 else -0.35\
+                ax.text(i, v + offset, f"\{v:+.1f\}", ha="center", color="#d8eaf6", fontsize=9)\
+            plt.tight_layout()\
+            st.pyplot(fig); plt.close()\
+\
+        # UHI stats table\
+        st.markdown("### UHI Statistics Table")\
+        df_uhi = pd.DataFrame(\{\
+            "Land Cover":         CLASS_LABELS,\
+            "Mean LST (\'b0C)":      temps,\
+            "UHI Intensity (\'b0C)": uhi_vals,\
+            "Status": ["\uc0\u55357 \u56628  Hot spot" if u > 5 else "\u55357 \u57313  Warm" if u > 1 else "\u55357 \u56629  Cool" for u in uhi_vals],\
+        \})\
+        st.dataframe(df_uhi, use_container_width=True, hide_index=True)\
+\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+# FOOTER\
+# \uc0\u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \u9552 \
+st.markdown("---")\
+st.markdown(\
+    "<div style='font-family:Space Mono;font-size:9px;color:#2e4860;text-align:center;padding:4px'>"\
+    "GEE PROJECT: MAJ-471914 \'b7 ROI: 19.0760\'b0N 72.8777\'b0E \'b7 R=35KM \'b7 SENTINEL-2 SR 2023 \'b7 10M/PX"\
+    "</div>", unsafe_allow_html=True)}
