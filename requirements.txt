@@ -1,8 +1,8 @@
-setuptools
-streamlit
-earthengine-api
-geemap==0.32.1
-python-box==6.1.0
-pandas
-numpy
-matplotlib
+streamlit>=1.32.0
+earthengine-api>=0.1.390
+geemap>=0.30.0
+pandas>=2.0.0
+numpy>=1.24.0
+matplotlib>=3.7.0
+folium>=0.14.0
+streamlit-folium>=0.15.0
